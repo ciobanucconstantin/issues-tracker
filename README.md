@@ -27,13 +27,7 @@ A lightweight, client-side web application for tracking issues using a 500-cell 
 
 No server or build tools are required since the app runs entirely in the browser.
 
-1. **Clone the Repository**:
-   ```bash
-   git clone https://github.com/your-username/issue-tracker.git
-   cd issue-tracker
-   ```
-
-2. **Open the App**:
+1. **Open the App**:
    - Open `issue-tracker.html` in a modern browser (e.g., Chrome, Firefox, Edge).
    - Alternatively, serve the file locally using a simple HTTP server:
      ```bash
@@ -107,8 +101,7 @@ This project is licensed under the MIT License.
 ## Acknowledgments
 
 - Built with vanilla JavaScript, HTML, and CSS for simplicity and portability.
-- Inspired by project management tools like Trello and Jira, adapted for lightweight, offline use.
-- Special thanks to contributors (add your name or GitHub handle if applicable).
+- Special thanks to contributors.
 
 ## Contact
 
