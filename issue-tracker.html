@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Language" content="en">
+  <title>Issue Tracker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+      overflow: hidden;
+    }
+
+    .container {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .tab-bar {
+      display: flex;
+      align-items: center;
+      background-color: #e0e0e0;
+      padding: 10px;
+      gap: 10px;
+      flex-wrap: wrap;
+      z-index: 500;
+    }
+
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      flex-grow: 1;
+    }
+
+    .tab {
+      padding: 8px 16px;
+      background-color: #fff;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .tab.active {
+      background-color: #007bff;
+      color: white;
+    }
+
+    .tab-indicator {
+      font-size: 12px;
+      line-height: 1;
+    }
+
+    #addTabBtn {
+      padding: 8px 16px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    #addTabBtn:hover {
+      background-color: #218838;
+    }
+
+    .grid {
+      flex-grow: 1;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      width: 100%;
+      overflow-y: auto;
+      padding: 5px;
+      padding-bottom: 60px; /* Space for navbar */
+      box-sizing: border-box;
+      z-index: 0;
+    }
+
+    .grid-cell {
+      position: relative;
+      width: 50px;
+      height: 50px;
+      border: 1px solid #ccc;
+      background-color: white;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .grid-cell:hover .icon {
+      display: block;
+    }
+
+    .icon {
+      display: none;
+      font-size: 24px;
+      color: #333;
+    }
+
+    .gray {
+      background-color: #808080;
+    }
+
+    .green {
+      background-color: #00ff00;
+    }
+
+    .orange {
+      background-color: #ffa500;
+    }
+
+    .red {
+      background-color: #ff0000;
+    }
+
+    .tooltip {
+      display: none;
+      position: absolute;
+      background-color: #333;
+      color: white;
+      padding: 10px;
+      border-radius: 5px;
+      z-index: 10;
+      white-space: normal;
+      max-width: 300px;
+      min-width: 150px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+
+    .grid-cell:hover .tooltip.active {
+      display: block;
+    }
+
+    .tooltip a {
+      color: #00b7eb;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    .tooltip a:hover {
+      color: #0096c7;
+    }
+
+    button {
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+    }
+
+    .modal-content {
+      background-color: white;
+      padding: 20px;
+      border-radius: 5px;
+      width: 300px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .close {
+      float: right;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    #issueForm, #renameTabForm, #aiChatForm {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    #issueForm label, #renameTabForm label, #aiChatForm label {
+      font-weight: bold;
+    }
+
+    #issueForm input, #renameTabForm input, #aiChatForm textarea, #issueForm textarea {
+      padding: 5px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+    }
+
+    #issueForm textarea, #aiChatForm textarea {
+      height: 100px;
+      resize: vertical;
+    }
+
+    .date-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .color-indicator {
+      width: 20px;
+      height: 20px;
+      border: 1px solid #ccc;
+    }
+
+    #issueForm button, #renameTabForm button, #aiChatForm button {
+      padding: 10px;
+      background-color: #28a745;
+    }
+
+    #issueForm button:hover, #renameTabForm button:hover, #aiChatForm button:hover {
+      background-color: #218838;
+    }
+
+    #completeIssueBtn, #deactivateTabBtn {
+      background-color: #dc3545;
+    }
+
+    #completeIssueBtn:hover, #deactivateTabBtn:hover {
+      background-color: #c82333;
+    }
+
+    #aiChatBtn {
+      background-color: #6f42c1;
+    }
+
+    #aiChatBtn:hover {
+      background-color: #5a32a3;
+    }
+
+    #buyCoffeeBtn {
+      background-color: #ffc107;
+      color: #000000;
+    }
+
+    #buyCoffeeBtn:hover {
+      background-color: #e0a800;
+      color: #000000;
+    }
+
+    #navbar a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .tab-stats {
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+
+    .tab-stats p {
+      margin: 5px 0;
+    }
+
+    #navbar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background-color: #e0e0e0;
+      padding: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 1000;
+      box-sizing: border-box;
+    }
+
+    .navbar-left, .navbar-right {
+      display: flex;
+      gap: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="tab-bar">
+      <div id="tabs" class="tabs"></div>
+      <button id="addTabBtn">+ Add Tab</button>
+    </div>
+    <div id="grid" class="grid"></div>
+    <nav id="navbar">
+      <input type="file" id="importJson" accept=".json" style="display: none;">
+      <div class="navbar-left">
+        <button id="importJsonBtn">Import JSON</button>
+        <button id="exportJsonBtn">Export JSON</button>
+      </div>
+      <div class="navbar-right">
+        <button id="aiChatBtn">Ask AI</button>
+        <a href="https://buymeacoffee.com/utools" target="_blank" rel="noopener">
+          <button id="buyCoffeeBtn">Buy Me a Coffee</button>
+        </a>
+      </div>
+    </nav>
+  </div>
+
+  <!-- Modal for issue creation/editing -->
+  <div id="issueModal" class="modal">
+    <div class="modal-content">
+      <span id="closeModal" class="close">×</span>
+      <h2 id="modalTitle">Add Issue</h2>
+      <form id="issueForm">
+        <label for="issueTitle">Title:</label>
+        <input type="text" id="issueTitle" required>
+        <label for="description">Description:</label>
+        <textarea id="description" placeholder="Enter issue description..."></textarea>
+        <label for="dueDate">Due Date:</label>
+        <div class="date-container">
+          <input type="datetime-local" id="dueDate" required>
+          <span id="dueDateColor" class="color-indicator"></span>
+        </div>
+        <label for="actionDate">Action Date:</label>
+        <div class="date-container">
+          <input type="datetime-local" id="actionDate">
+          <span id="actionDateColor" class="color-indicator"></span>
+        </div>
+        <label for="gridPosition">Grid Position (1-500):</label>
+        <input type="number" id="gridPosition" min="1" max="500" required>
+        <label for="caseLink">Case Link:</label>
+        <input type="url" id="caseLink" placeholder="https://crm.example.com/case">
+        <label for="quoteLink">Quote Link:</label>
+        <input type="url" id="quoteLink" placeholder="https://crm.example.com/quote">
+        <label for="workorderLink">Workorder Link:</label>
+        <input type="url" id="workorderLink" placeholder="https://crm.example.com/workorder">
+        <label for="additionalLink1">Additional Link 1:</label>
+        <input type="url" id="additionalLink1" placeholder="https://example.com/link1">
+        <label for="additionalLink2">Additional Link 2:</label>
+        <input type="url" id="additionalLink2" placeholder="https://example.com/link2">
+        <label for="additionalLink3">Additional Link 3:</label>
+        <input type="url" id="additionalLink3" placeholder="https://example.com/link3">
+        <button type="submit">Save Issue</button>
+        <button type="button" id="completeIssueBtn" style="display: none;">Mark as Completed</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal for tab options -->
+  <div id="renameTabModal" class="modal">
+    <div class="modal-content">
+      <span id="closeRenameModal" class="close">×</span>
+      <h2>Tab Options</h2>
+      <div id="tabStats" class="tab-stats"></div>
+      <form id="renameTabForm">
+        <label for="tabName">Tab Name:</label>
+        <input type="text" id="tabName" required>
+        <button type="submit">Save</button>
+        <button type="button" id="deactivateTabBtn">Deactivate Tab</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal for AI chat -->
+  <div id="aiChatModal" class="modal">
+    <div class="modal-content">
+      <span id="closeAIChatModal" class="close">×</span>
+      <h2>Ask AI About Issues</h2>
+      <form id="aiChatForm">
+        <label for="aiChatInput">Your Question:</label>
+        <textarea id="aiChatInput" placeholder="Type your question about the issues..."></textarea>
+        <button type="submit">Send</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Initialize localStorage with tabs and issues
+    function initializeStorage() {
+      if (!localStorage.getItem('tabs')) {
+        const initialTabs = [{ id: Date.now(), name: 'Tab 1', deactivated: false }];
+        localStorage.setItem('tabs', JSON.stringify(initialTabs));
+      }
+      if (!localStorage.getItem('issues')) {
+        localStorage.setItem('issues', JSON.stringify([]));
+      }
+    }
+
+    // Get tabs and issues from localStorage
+    function getTabs() {
+      const tabs = JSON.parse(localStorage.getItem('tabs')) || [];
+      return tabs.map(tab => ({
+        ...tab,
+        deactivated: tab.deactivated !== undefined ? tab.deactivated : false
+      }));
+    }
+
+    function getIssues() {
+      return JSON.parse(localStorage.getItem('issues')) || [];
+    }
+
+    // Save tabs and issues to localStorage
+    function saveTabs(tabs) {
+      localStorage.setItem('tabs', JSON.stringify(tabs));
+    }
+
+    function saveIssues(issues) {
+      localStorage.setItem('issues', JSON.stringify(issues));
+    }
+
+    // Calculate urgency color for grid cell
+    function getUrgencyColor(dueDate, actionDate) {
+      const now = new Date();
+      const due = new Date(dueDate);
+      const action = actionDate ? new Date(actionDate) : null;
+      const diffDueDays = (due - now) / (1000 * 60 * 60 * 24);
+
+      if (diffDueDays <= 1) return 'red'; // Critical: ≤ 1 day or overdue
+      if (action && now >= action) return 'orange'; // Action date reached
+      if (diffDueDays <= 7) return 'orange'; // Urgent: ≤ 7 days
+      return 'green'; // Non-urgent: > 7 days
+    }
+
+    // Update color indicators in the form
+    function updateColorIndicators(dueDate, actionDate) {
+      const dueColor = dueDate ? '#ff0000' : 'transparent'; // Red for due date
+      const actionColor = actionDate ? '#ffa500' : 'transparent'; // Orange for action date
+      document.getElementById('dueDateColor').style.backgroundColor = dueColor;
+      document.getElementById('actionDateColor').style.backgroundColor = actionColor;
+    }
+
+    // Validate URL (basic check for http:// or https://)
+    function isValidUrl(url) {
+      if (!url) return true; // Empty is valid (optional field)
+      return /^https?:\/\//i.test(url);
+    }
+
+    // Check if tab has orange or red issues
+    function getTabIndicators(tabId) {
+      const issues = getIssues().filter(issue => issue.tabId === tabId && !issue.completed);
+      const hasOrange = issues.some(issue => getUrgencyColor(issue.dueDate, issue.actionDate) === 'orange');
+      const hasRed = issues.some(issue => getUrgencyColor(issue.dueDate, issue.actionDate) === 'red');
+      return { hasOrange, hasRed };
+    }
+
+    // Render tabs (only non-deactivated)
+    function renderTabs() {
+      const tabsContainer = document.getElementById('tabs');
+      tabsContainer.innerHTML = '';
+      const tabs = getTabs().filter(tab => !tab.deactivated);
+      const activeTabId = getActiveTabId();
+
+      tabs.forEach(tab => {
+        const tabElement = document.createElement('div');
+        tabElement.classList.add('tab');
+        if (tab.id === activeTabId) {
+          tabElement.classList.add('active');
+        }
+        const indicators = getTabIndicators(tab.id);
+        tabElement.innerHTML = `
+          ${tab.name}
+          ${indicators.hasOrange ? '<span class="tab-indicator">🟠</span>' : ''}
+          ${indicators.hasRed ? '<span class="tab-indicator">🔴</span>' : ''}
+        `;
+        tabElement.dataset.tabId = tab.id;
+        tabElement.addEventListener('click', () => {
+          setActiveTab(tab.id);
+          renderTabs();
+          renderGrid();
+        });
+        tabElement.addEventListener('dblclick', () => openRenameTabModal(tab.id));
+        tabsContainer.appendChild(tabElement);
+      });
+    }
+
+    // Get and set active tab
+    function getActiveTabId() {
+      const activeTabId = localStorage.getItem('activeTabId');
+      const tabs = getTabs().filter(tab => !tab.deactivated);
+      return activeTabId && tabs.find(tab => tab.id === parseInt(activeTabId)) 
+        ? parseInt(activeTabId) 
+        : tabs[0]?.id;
+    }
+
+    function setActiveTab(tabId) {
+      localStorage.setItem('activeTabId', tabId);
+    }
+
+    // Render the grid
+    function renderGrid() {
+      const grid = document.getElementById('grid');
+      grid.innerHTML = '';
+      const issues = getIssues();
+      const activeTabId = getActiveTabId();
+      const tabs = getTabs();
+      const activeTab = tabs.find(tab => tab.id === activeTabId);
+      let hoverTimeout;
+
+      // If active tab is deactivated, clear grid
+      if (!activeTab || activeTab.deactivated) {
+        return;
+      }
+
+      for (let i = 1; i <= 500; i++) {
+        const cell = document.createElement('div');
+        cell.classList.add('grid-cell');
+        cell.dataset.position = i;
+
+        const issue = issues.find(issue => issue.gridPosition === i && issue.tabId === activeTabId && !issue.completed);
+        const icon = document.createElement('span');
+        icon.classList.add('icon');
+        icon.textContent = issue ? '✎' : '+';
+        cell.appendChild(icon);
+
+        if (issue) {
+          cell.classList.add(getUrgencyColor(issue.dueDate, issue.actionDate));
+
+          // Create tooltip with description and links
+          const tooltip = document.createElement('div');
+          tooltip.classList.add('tooltip');
+          const sanitizedDescription = issue.description ? 
+            issue.description.replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>') : '';
+          tooltip.innerHTML = `
+            <strong>${issue.title}</strong><br>
+            ${sanitizedDescription ? `Description: ${sanitizedDescription}<br>` : ''}
+            Due: ${new Date(issue.dueDate).toLocaleString()}<br>
+            Action: ${issue.actionDate ? new Date(issue.actionDate).toLocaleString() : 'Not set'}<br>
+            ${issue.caseLink ? `Case: <a href="${encodeURI(issue.caseLink)}" target="_blank" rel="noopener">${issue.caseLink}</a><br>` : ''}
+            ${issue.quoteLink ? `Quote: <a href="${encodeURI(issue.quoteLink)}" target="_blank" rel="noopener">${issue.quoteLink}</a><br>` : ''}
+            ${issue.workorderLink ? `Workorder: <a href="${encodeURI(issue.workorderLink)}" target="_blank" rel="noopener">${issue.workorderLink}</a><br>` : ''}
+            ${issue.additionalLink1 ? `Link 1: <a href="${encodeURI(issue.additionalLink1)}" target="_blank" rel="noopener">${issue.additionalLink1}</a><br>` : ''}
+            ${issue.additionalLink2 ? `Link 2: <a href="${encodeURI(issue.additionalLink2)}" target="_blank" rel="noopener">${issue.additionalLink2}</a><br>` : ''}
+            ${issue.additionalLink3 ? `Link 3: <a href="${encodeURI(issue.additionalLink3)}" target="_blank" rel="noopener">${issue.additionalLink3}</a><br>` : ''}
+          `;
+          cell.appendChild(tooltip);
+
+          cell.addEventListener('mouseenter', () => {
+            hoverTimeout = setTimeout(() => {
+              tooltip.classList.add('active');
+
+              // Ensure tooltip is visible to get accurate dimensions
+              tooltip.style.display = 'block';
+              const cellRect = cell.getBoundingClientRect();
+              const tooltipRect = tooltip.getBoundingClientRect();
+              const viewportWidth = window.innerWidth;
+              const viewportHeight = window.innerHeight;
+              const gap = 2; // Small gap between cell and tooltip
+
+              // Default: Position below the cell, aligned with left edge
+              let top = cellRect.height + gap;
+              let left = 0;
+
+              // If tooltip would extend below viewport, move it above the cell
+              if (cellRect.bottom + tooltipRect.height + gap > viewportHeight) {
+                top = -tooltipRect.height - gap;
+              }
+
+              // If tooltip would extend beyond right edge, align right edge with cell's right edge
+              if (cellRect.left + tooltipRect.width > viewportWidth) {
+                left = cellRect.width - tooltipRect.width;
+              }
+
+              // Ensure tooltip doesn't go off the left edge
+              if (cellRect.left + left < 0) {
+                left = -cellRect.left;
+              }
+
+              tooltip.style.top = `${top}px`;
+              tooltip.style.left = `${left}px`;
+            }, 3000);
+          });
+
+          cell.addEventListener('mouseleave', () => {
+            clearTimeout(hoverTimeout);
+            tooltip.classList.remove('active');
+            tooltip.style.display = 'none';
+          });
+        }
+
+        cell.addEventListener('click', () => openModal(i));
+        grid.appendChild(cell);
+      }
+    }
+
+    // Open modal for adding/editing issue
+    function openModal(position) {
+      const modal = document.getElementById('issueModal');
+      const form = document.getElementById('issueForm');
+      const modalTitle = document.getElementById('modalTitle');
+      const completeBtn = document.getElementById('completeIssueBtn');
+      const issues = getIssues();
+      const activeTabId = getActiveTabId();
+      const issue = issues.find(issue => issue.gridPosition === position && issue.tabId === activeTabId && !issue.completed);
+
+      document.getElementById('gridPosition').value = position;
+      document.getElementById('issueTitle').value = issue ? issue.title : '';
+      document.getElementById('description').value = issue ? issue.description || '' : '';
+      document.getElementById('dueDate').value = issue ? issue.dueDate.slice(0, 16) : '';
+      document.getElementById('actionDate').value = issue && issue.actionDate ? issue.actionDate.slice(0, 16) : '';
+      document.getElementById('caseLink').value = issue ? issue.caseLink || '' : '';
+      document.getElementById('quoteLink').value = issue ? issue.quoteLink || '' : '';
+      document.getElementById('workorderLink').value = issue ? issue.workorderLink || '' : '';
+      document.getElementById('additionalLink1').value = issue ? issue.additionalLink1 || '' : '';
+      document.getElementById('additionalLink2').value = issue ? issue.additionalLink2 || '' : '';
+      document.getElementById('additionalLink3').value = issue ? issue.additionalLink3 || '' : '';
+      modalTitle.textContent = issue ? 'Edit Issue' : 'Add Issue';
+      completeBtn.style.display = issue ? 'block' : 'none';
+
+      updateColorIndicators(
+        issue ? issue.dueDate : document.getElementById('dueDate').value,
+        issue && issue.actionDate ? issue.actionDate : document.getElementById('actionDate').value
+      );
+
+      modal.style.display = 'flex';
+
+      document.getElementById('dueDate').addEventListener('change', () => {
+        updateColorIndicators(
+          document.getElementById('dueDate').value,
+          document.getElementById('actionDate').value
+        );
+      });
+      document.getElementById('actionDate').addEventListener('change', () => {
+        updateColorIndicators(
+          document.getElementById('dueDate').value,
+          document.getElementById('actionDate').value
+        );
+      });
+
+      form.onsubmit = (e) => {
+        e.preventDefault();
+        saveIssue(position);
+      };
+
+      completeBtn.onclick = () => markIssueCompleted(issue.id);
+    }
+
+    // Save or update issue
+    function saveIssue(position) {
+      const title = document.getElementById('issueTitle').value;
+      const description = document.getElementById('description').value;
+      const dueDate = document.getElementById('dueDate').value;
+      const actionDate = document.getElementById('actionDate').value;
+      const caseLink = document.getElementById('caseLink').value;
+      const quoteLink = document.getElementById('quoteLink').value;
+      const workorderLink = document.getElementById('workorderLink').value;
+      const additionalLink1 = document.getElementById('additionalLink1').value;
+      const additionalLink2 = document.getElementById('additionalLink2').value;
+      const additionalLink3 = document.getElementById('additionalLink3').value;
+
+      const links = [caseLink, quoteLink, workorderLink, additionalLink1, additionalLink2, additionalLink3];
+      for (const link of links) {
+        if (!isValidUrl(link)) {
+          alert('Please enter valid URLs starting with http:// or https://, or leave fields empty.');
+          return;
+        }
+      }
+
+      const activeTabId = getActiveTabId();
+      const issues = getIssues();
+      const existingIssue = issues.find(issue => issue.gridPosition === position && issue.tabId === activeTabId && !issue.completed);
+
+      if (existingIssue) {
+        existingIssue.title = title;
+        existingIssue.description = description || null;
+        existingIssue.dueDate = dueDate;
+        existingIssue.actionDate = actionDate || null;
+        existingIssue.caseLink = caseLink || null;
+        existingIssue.quoteLink = quoteLink || null;
+        existingIssue.workorderLink = workorderLink || null;
+        existingIssue.additionalLink1 = additionalLink1 || null;
+        existingIssue.additionalLink2 = additionalLink2 || null;
+        existingIssue.additionalLink3 = additionalLink3 || null;
+      } else {
+        issues.push({
+          id: Date.now(),
+          title,
+          description: description || null,
+          dueDate,
+          actionDate: actionDate || null,
+          gridPosition: parseInt(position),
+          tabId: activeTabId,
+          completed: false,
+          caseLink: caseLink || null,
+          quoteLink: quoteLink || null,
+          workorderLink: workorderLink || null,
+          additionalLink1: additionalLink1 || null,
+          additionalLink2: additionalLink2 || null,
+          additionalLink3: additionalLink3 || null
+        });
+      }
+
+      saveIssues(issues);
+      closeModal();
+      renderGrid();
+      renderTabs(); // Update tabs to reflect potential indicator changes
+    }
+
+    // Mark issue as completed
+    function markIssueCompleted(issueId) {
+      const issues = getIssues();
+      const issue = issues.find(issue => issue.id === issueId);
+      if (issue) {
+        issue.completed = true;
+        saveIssues(issues);
+        closeModal();
+        renderGrid();
+        renderTabs(); // Update tabs to reflect potential indicator changes
+      }
+    }
+
+    // Calculate tab statistics
+    function getTabStats(tabId) {
+      const issues = getIssues().filter(issue => issue.tabId === tabId);
+      const totalIssues = issues.length;
+      const completedIssues = issues.filter(issue => issue.completed).length;
+      const activeIssues = issues.filter(issue => !issue.completed);
+      const greenIssues = activeIssues.filter(issue => getUrgencyColor(issue.dueDate, issue.actionDate) === 'green').length;
+      const orangeIssues = activeIssues.filter(issue => getUrgencyColor(issue.dueDate, issue.actionDate) === 'orange').length;
+      const redIssues = activeIssues.filter(issue => getUrgencyColor(issue.dueDate, issue.actionDate) === 'red').length;
+
+      return {
+        totalIssues,
+        greenIssues,
+        orangeIssues,
+        redIssues,
+        completedIssues
+      };
+    }
+
+    // Open modal for tab options
+    function openRenameTabModal(tabId) {
+      const modal = document.getElementById('renameTabModal');
+      const form = document.getElementById('renameTabForm');
+      const tabNameInput = document.getElementById('tabName');
+      const tabStatsDiv = document.getElementById('tabStats');
+      const deactivateBtn = document.getElementById('deactivateTabBtn');
+      const tabs = getTabs();
+      const tab = tabs.find(t => t.id === tabId);
+
+      // Display tab statistics
+      const stats = getTabStats(tabId);
+      tabStatsDiv.innerHTML = `
+        <p>Total Issues: ${stats.totalIssues}</p>
+        <p>Green Issues: ${stats.greenIssues}</p>
+        <p>Orange Issues: ${stats.orangeIssues}</p>
+        <p>Red Issues: ${stats.redIssues}</p>
+        <p>Completed Issues: ${stats.completedIssues}</p>
+      `;
+
+      tabNameInput.value = tab.name;
+      modal.style.display = 'flex';
+
+      // Disable deactivate button if this is the last non-deactivated tab
+      const activeTabs = tabs.filter(t => !t.deactivated);
+      deactivateBtn.disabled = activeTabs.length <= 1;
+
+      form.onsubmit = (e) => {
+        e.preventDefault();
+        tab.name = tabNameInput.value;
+        saveTabs(tabs);
+        closeRenameTabModal();
+        renderTabs();
+      };
+
+      deactivateBtn.onclick = () => deactivateTab(tabId);
+    }
+
+    // Deactivate tab
+    function deactivateTab(tabId) {
+      const tabs = getTabs();
+      const tab = tabs.find(t => t.id === tabId);
+      const activeTabs = tabs.filter(t => !t.deactivated);
+
+      if (activeTabs.length <= 1) {
+        alert('Cannot deactivate the last remaining tab.');
+        return;
+      }
+
+      if (tab) {
+        tab.deactivated = true;
+        saveTabs(tabs);
+        closeRenameTabModal();
+        renderTabs();
+        renderGrid();
+      }
+    }
+
+    // Open modal for AI chat
+    function openAIChatModal() {
+      const modal = document.getElementById('aiChatModal');
+      modal.style.display = 'flex';
+    }
+
+    // Close modals
+    function closeModal() {
+      const modal = document.getElementById('issueModal');
+      modal.style.display = 'none';
+    }
+
+    function closeRenameTabModal() {
+      const modal = document.getElementById('renameTabModal');
+      modal.style.display = 'none';
+    }
+
+    function closeAIChatModal() {
+      const modal = document.getElementById('aiChatModal');
+      modal.style.display = 'none';
+    }
+
+    // Add new tab
+    function addTab() {
+      const tabs = getTabs();
+      const newTab = {
+        id: Date.now(),
+        name: `Tab ${tabs.length + 1}`,
+        deactivated: false
+      };
+      tabs.push(newTab);
+      saveTabs(tabs);
+      setActiveTab(newTab.id);
+      renderTabs();
+      renderGrid();
+    }
+
+    // Import JSON file
+    function importJson(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = JSON.parse(e.target.result);
+          if (data.tabs && Array.isArray(data.tabs) && data.issues && Array.isArray(data.issues)) {
+            // Validate gridPosition and new fields
+            const validIssues = data.issues.filter(issue => 
+              issue.gridPosition >= 1 && issue.gridPosition <= 500
+            ).map(issue => ({
+              ...issue,
+              description: issue.description || null,
+              caseLink: issue.caseLink || null,
+              quoteLink: issue.quoteLink || null,
+              workorderLink: issue.workorderLink || null,
+              additionalLink1: issue.additionalLink1 || null,
+              additionalLink2: issue.additionalLink2 || null,
+              additionalLink3: issue.additionalLink3 || null
+            }));
+            const validTabs = data.tabs.map(tab => ({
+              ...tab,
+              deactivated: tab.deactivated !== undefined ? tab.deactivated : false
+            }));
+            saveTabs(validTabs);
+            saveIssues(validIssues);
+            setActiveTab(validTabs.find(tab => !tab.deactivated)?.id || Date.now());
+            renderTabs();
+            renderGrid();
+            alert('Tabs and issues imported successfully!');
+          } else {
+            alert('Invalid JSON format. Please upload a valid tabs and issues object.');
+          }
+        } catch (error) {
+          alert('Error parsing JSON file.');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // Export JSON file
+    function exportJson() {
+      const tabs = getTabs();
+      const issues = getIssues();
+      const data = { tabs, issues };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'issue-tracker.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // Event listeners
+    document.getElementById('closeModal').addEventListener('click', closeModal);
+    document.getElementById('closeRenameModal').addEventListener('click', closeRenameTabModal);
+    document.getElementById('addTabBtn').addEventListener('click', addTab);
+    document.getElementById('importJsonBtn').addEventListener('click', () => document.getElementById('importJson').click());
+    document.getElementById('importJson').addEventListener('change', importJson);
+    document.getElementById('exportJsonBtn').addEventListener('click', exportJson);
+    document.getElementById('aiChatBtn').addEventListener('click', openAIChatModal);
+    document.getElementById('closeAIChatModal').addEventListener('click', closeAIChatModal);
+
+    // Initialize
+    initializeStorage();
+    renderTabs();
+    renderGrid();
+  </script>
+</body>
+</html>
