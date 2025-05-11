@@ -2,6 +2,9 @@
 
 A lightweight, client-side web application for tracking issues using a 500-cell grid interface. Built with HTML, CSS, and JavaScript, it uses `localStorage` to persist data in the browser, making it easy to manage tasks without server dependencies. Features include tabbed organization, urgency-based coloring, responsive tooltips, and JSON import/export for data portability.
 
+## Open the Web App
+(https://ciobanucconstantin.github.io/issues-tracker/issue-tracker.html)[https://ciobanucconstantin.github.io/issues-tracker/issue-tracker.html]
+
 ## Features
 
 - **Grid-Based Interface**: 500-cell grid (50x10) to organize issues, with click-to-edit and hover-to-view details.
@@ -99,7 +102,7 @@ Contributions are welcome! Please follow these steps:
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License.
 
 ## Acknowledgments
 
