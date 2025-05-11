@@ -41,7 +41,7 @@
 
     .tab {
       padding: 8px 16px;
-      background-color: #fff;
+      background-color: transparent;
       border: 1px solid #ccc;
       border-radius: 5px;
       cursor: pointer;
@@ -51,8 +51,8 @@
     }
 
     .tab.active {
-      background-color: #007bff;
-      color: white;
+      background-color: white;
+      color: black;
     }
 
     .tab-indicator {
@@ -155,12 +155,13 @@
     }
 
     button {
-      padding: 10px 20px;
+      padding: 8px 12px;
       background-color: #007bff;
       color: white;
       border: none;
       border-radius: 5px;
       cursor: pointer;
+      width: fit-content;
     }
 
     button:hover {
@@ -184,21 +185,29 @@
       background-color: white;
       padding: 20px;
       border-radius: 5px;
-      width: 300px;
+      width: auto;
+      max-width: 90%;
       max-height: 80vh;
       overflow-y: auto;
+      display: flex;
+      gap: 20px;
+      position: relative;
     }
 
     .close {
-      float: right;
+      position: absolute;
+      top: 10px;
+      right: 10px;
       font-size: 20px;
       cursor: pointer;
+      color: #333;
     }
 
     #issueForm, #renameTabForm, #aiChatForm {
       display: flex;
       flex-direction: column;
       gap: 10px;
+      width: 400px;
     }
 
     #issueForm label, #renameTabForm label, #aiChatForm label {
@@ -211,9 +220,13 @@
       border-radius: 3px;
     }
 
-    #issueForm textarea, #aiChatForm textarea {
-      height: 100px;
+    #issueForm textarea {
+      height: 150px;
       resize: vertical;
+    }
+
+    #issueForm input:not([type="number"]):not([type="datetime-local"]), #issueForm textarea {
+      width: calc(100% - 30px); /* Adjust for link icon */
     }
 
     .date-container {
@@ -229,7 +242,6 @@
     }
 
     #issueForm button, #renameTabForm button, #aiChatForm button {
-      padding: 10px;
       background-color: #28a745;
     }
 
@@ -243,14 +255,6 @@
 
     #completeIssueBtn:hover, #deactivateTabBtn:hover {
       background-color: #c82333;
-    }
-
-    #aiChatBtn {
-      background-color: #6f42c1;
-    }
-
-    #aiChatBtn:hover {
-      background-color: #5a32a3;
     }
 
     #buyCoffeeBtn {
@@ -295,6 +299,104 @@
       display: flex;
       gap: 10px;
     }
+
+    .notes-section, .ai-chat-section {
+      width: 400px;
+      display: flex;
+      flex-direction: column;
+      gap: 0px;
+      flex-grow: 1;
+    }
+
+    .notes-list, .ai-chat-list {
+      max-height: 600px;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      padding: 10px;
+      border-radius: 3px;
+      background-color: #f9f9f9;
+      flex-grow: 1;
+    }
+
+    .note, .ai-message {
+      border-bottom: 1px solid #eee;
+      padding: 5px 0;
+      font-size: 14px;
+    }
+
+    .note a, .ai-message a {
+      color: #007bff;
+      text-decoration: underline;
+    }
+
+    .note a:hover, .ai-message a:hover {
+      color: #0056b3;
+    }
+
+    .note:last-child, .ai-message:last-child {
+      border-bottom: none;
+    }
+
+    .note-timestamp, .ai-message-timestamp {
+      font-size: 12px;
+      color: #666;
+    }
+
+    #noteInput, #aiChatInput {
+      width: 395px;
+      height: 50px;
+      resize: none;
+      overflow-y: auto;
+    }
+
+    #addNoteBtn, #addAIChatBtn {
+      background-color: #007bff;
+      align-self: flex-end;
+    }
+
+    #addNoteBtn:hover, #addAIChatBtn:hover {
+      background-color: #0056b3;
+    }
+
+    .link-container {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .link-icon {
+      cursor: pointer;
+      margin-left: 5px;
+      font-size: 16px;
+      color: #007bff;
+    }
+
+    .link-icon:hover {
+      color: #0056b3;
+    }
+
+    .link-icon.disabled {
+      cursor: not-allowed;
+      color: #ccc;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 10px;
+    }
+
+    .notes-footer, .ai-chat-footer {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      margin-top: auto;
+    }
+
+    .notes-footer-buttons, .ai-chat-footer-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
   </style>
 </head>
 <body>
@@ -307,11 +409,10 @@
     <nav id="navbar">
       <input type="file" id="importJson" accept=".json" style="display: none;">
       <div class="navbar-left">
-        <button id="importJsonBtn">Import Issues File</button>
-        <button id="exportJsonBtn">Export Issues File</button>
+        <button id="importJsonBtn">Import JSON</button>
+        <button id="exportJsonBtn">Export JSON</button>
       </div>
       <div class="navbar-right">
-        <button id="aiChatBtn">Ask AI</button>
         <a href="https://buymeacoffee.com/utools" target="_blank" rel="noopener">
           <button id="buyCoffeeBtn">Buy Me a Coffee</button>
         </a>
@@ -323,39 +424,63 @@
   <div id="issueModal" class="modal">
     <div class="modal-content">
       <span id="closeModal" class="close">×</span>
-      <h2 id="modalTitle">Add Issue</h2>
       <form id="issueForm">
         <label for="issueTitle">Title:</label>
         <input type="text" id="issueTitle" required>
         <label for="description">Description:</label>
         <textarea id="description" placeholder="Enter issue description..."></textarea>
-        <label for="dueDate">Due Date:</label>
-        <div class="date-container">
-          <input type="datetime-local" id="dueDate" required>
-          <span id="dueDateColor" class="color-indicator"></span>
-        </div>
         <label for="actionDate">Action Date:</label>
         <div class="date-container">
           <input type="datetime-local" id="actionDate">
           <span id="actionDateColor" class="color-indicator"></span>
         </div>
+        <label for="dueDate">Due Date:</label>
+        <div class="date-container">
+          <input type="datetime-local" id="dueDate" required>
+          <span id="dueDateColor" class="color-indicator"></span>
+        </div>
         <label for="gridPosition">Grid Position (1-500):</label>
         <input type="number" id="gridPosition" min="1" max="500" required>
         <label for="caseLink">Case Link:</label>
-        <input type="url" id="caseLink" placeholder="https://crm.example.com/case">
+        <div class="link-container">
+          <input type="url" id="caseLink" placeholder="https://crm.example.com/case">
+          <span id="caseLinkIcon" class="link-icon disabled">🔗</span>
+        </div>
         <label for="quoteLink">Quote Link:</label>
-        <input type="url" id="quoteLink" placeholder="https://crm.example.com/quote">
+        <div class="link-container">
+          <input type="url" id="quoteLink" placeholder="https://crm.example.com/quote">
+          <span id="quoteLinkIcon" class="link-icon disabled">🔗</span>
+        </div>
         <label for="workorderLink">Workorder Link:</label>
-        <input type="url" id="workorderLink" placeholder="https://crm.example.com/workorder">
-        <label for="additionalLink1">Additional Link 1:</label>
-        <input type="url" id="additionalLink1" placeholder="https://example.com/link1">
-        <label for="additionalLink2">Additional Link 2:</label>
-        <input type="url" id="additionalLink2" placeholder="https://example.com/link2">
-        <label for="additionalLink3">Additional Link 3:</label>
-        <input type="url" id="additionalLink3" placeholder="https://example.com/link3">
-        <button type="submit">Save Issue</button>
-        <button type="button" id="completeIssueBtn" style="display: none;">Mark as Completed</button>
+        <div class="link-container">
+          <input type="url" id="workorderLink" placeholder="https://crm.example.com/workorder">
+          <span id="workorderLinkIcon" class="link-icon disabled">🔗</span>
+        </div>
+        <div class="button-group">
+          <button type="submit">Save Issue</button>
+          <button type="button" id="completeIssueBtn" style="display: none;">Mark as Completed</button>
+        </div>
       </form>
+      <div class="notes-section">
+        <h3>Notes</h3>
+        <div id="notesList" class="notes-list"></div>
+        <div class="notes-footer">
+          <textarea id="noteInput" placeholder="Add a note..."></textarea>
+          <div class="notes-footer-buttons">
+            <button id="addNoteBtn">Add Note</button>
+          </div>
+        </div>
+      </div>
+      <div class="ai-chat-section">
+        <h3>AI Chat</h3>
+        <div id="aiChatList" class="ai-chat-list"></div>
+        <div class="ai-chat-footer">
+          <textarea id="aiChatInput" placeholder="Ask AI something..."></textarea>
+          <div class="ai-chat-footer-buttons">
+            <button id="addAIChatBtn">Send</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -448,6 +573,29 @@
       return /^https?:\/\//i.test(url);
     }
 
+    // Detect URLs (http://, https://, file://) and Windows-style file paths in text and convert to clickable links
+    function linkifyText(text) {
+      // Match http://, https://, file:// URLs and Windows-style paths (e.g., C:\path\to\folder\)
+      const urlRegex = /(https?:\/\/[^\s]+)|(file:\/\/\/[^\s]+)|([A-Z]:\\[^:\s]*\\)/g;
+      return text.replace(urlRegex, match => {
+        let url = match;
+        let displayUrl = match;
+
+        // Check if the match is a Windows-style file path (e.g., C:\path\to\folder\)
+        if (/^[A-Z]:\\.*\\$/.test(match)) {
+          // Replace backslashes with forward slashes and encode spaces
+          url = `file:///${match.replace(/\\/g, '/').replace(/ /g, '%20')}`;
+          // For display, keep original path but truncate if too long
+          displayUrl = match.length > 50 ? match.slice(0, 47) + '...' : match;
+        } else {
+          // For URLs, truncate display if too long
+          displayUrl = match.length > 50 ? match.slice(0, 47) + '...' : match;
+        }
+
+        return `<a href="${encodeURI(url)}" target="_blank" rel="noopener">${displayUrl}</a>`;
+      });
+    }
+
     // Check if tab has orange or red issues
     function getTabIndicators(tabId) {
       const issues = getIssues().filter(issue => issue.tabId === tabId && !issue.completed);
@@ -528,11 +676,17 @@
         if (issue) {
           cell.classList.add(getUrgencyColor(issue.dueDate, issue.actionDate));
 
-          // Create tooltip with description and links
+          // Create tooltip with description, links, notes, and AI chat
           const tooltip = document.createElement('div');
           tooltip.classList.add('tooltip');
           const sanitizedDescription = issue.description ? 
             issue.description.replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>') : '';
+          const notesList = issue.notes && issue.notes.length > 0 
+            ? `<br>Notes:<ul>${issue.notes.map(note => `<li>${linkifyText(note.text)} (${new Date(note.timestamp).toLocaleString()})</li>`).join('')}</ul>` 
+            : '';
+          const aiChatList = issue.aiChat && issue.aiChat.length > 0 
+            ? `<br>AI Chat:<ul>${issue.aiChat.map(msg => `<li>${linkifyText(msg.text)} (${new Date(msg.timestamp).toLocaleString()})</li>`).join('')}</ul>` 
+            : '';
           tooltip.innerHTML = `
             <strong>${issue.title}</strong><br>
             ${sanitizedDescription ? `Description: ${sanitizedDescription}<br>` : ''}
@@ -541,9 +695,8 @@
             ${issue.caseLink ? `Case: <a href="${encodeURI(issue.caseLink)}" target="_blank" rel="noopener">${issue.caseLink}</a><br>` : ''}
             ${issue.quoteLink ? `Quote: <a href="${encodeURI(issue.quoteLink)}" target="_blank" rel="noopener">${issue.quoteLink}</a><br>` : ''}
             ${issue.workorderLink ? `Workorder: <a href="${encodeURI(issue.workorderLink)}" target="_blank" rel="noopener">${issue.workorderLink}</a><br>` : ''}
-            ${issue.additionalLink1 ? `Link 1: <a href="${encodeURI(issue.additionalLink1)}" target="_blank" rel="noopener">${issue.additionalLink1}</a><br>` : ''}
-            ${issue.additionalLink2 ? `Link 2: <a href="${encodeURI(issue.additionalLink2)}" target="_blank" rel="noopener">${issue.additionalLink2}</a><br>` : ''}
-            ${issue.additionalLink3 ? `Link 3: <a href="${encodeURI(issue.additionalLink3)}" target="_blank" rel="noopener">${issue.additionalLink3}</a><br>` : ''}
+            ${notesList}
+            ${aiChatList}
           `;
           cell.appendChild(tooltip);
 
@@ -580,7 +733,7 @@
 
               tooltip.style.top = `${top}px`;
               tooltip.style.left = `${left}px`;
-            }, 3000);
+            }, 1000);
           });
 
           cell.addEventListener('mouseleave', () => {
@@ -599,25 +752,88 @@
     function openModal(position) {
       const modal = document.getElementById('issueModal');
       const form = document.getElementById('issueForm');
-      const modalTitle = document.getElementById('modalTitle');
       const completeBtn = document.getElementById('completeIssueBtn');
+      const notesList = document.getElementById('notesList');
+      const noteInput = document.getElementById('noteInput');
+      const addNoteBtn = document.getElementById('addNoteBtn');
+      const aiChatList = document.getElementById('aiChatList');
+      const aiChatInput = document.getElementById('aiChatInput');
+      const addAIChatBtn = document.getElementById('addAIChatBtn');
+      const caseLinkInput = document.getElementById('caseLink');
+      const quoteLinkInput = document.getElementById('quoteLink');
+      const workorderLinkInput = document.getElementById('workorderLink');
+      const caseLinkIcon = document.getElementById('caseLinkIcon');
+      const quoteLinkIcon = document.getElementById('quoteLinkIcon');
+      const workorderLinkIcon = document.getElementById('workorderLinkIcon');
       const issues = getIssues();
       const activeTabId = getActiveTabId();
       const issue = issues.find(issue => issue.gridPosition === position && issue.tabId === activeTabId && !issue.completed);
 
+      // Populate form fields
       document.getElementById('gridPosition').value = position;
       document.getElementById('issueTitle').value = issue ? issue.title : '';
       document.getElementById('description').value = issue ? issue.description || '' : '';
       document.getElementById('dueDate').value = issue ? issue.dueDate.slice(0, 16) : '';
       document.getElementById('actionDate').value = issue && issue.actionDate ? issue.actionDate.slice(0, 16) : '';
-      document.getElementById('caseLink').value = issue ? issue.caseLink || '' : '';
-      document.getElementById('quoteLink').value = issue ? issue.quoteLink || '' : '';
-      document.getElementById('workorderLink').value = issue ? issue.workorderLink || '' : '';
-      document.getElementById('additionalLink1').value = issue ? issue.additionalLink1 || '' : '';
-      document.getElementById('additionalLink2').value = issue ? issue.additionalLink2 || '' : '';
-      document.getElementById('additionalLink3').value = issue ? issue.additionalLink3 || '' : '';
-      modalTitle.textContent = issue ? 'Edit Issue' : 'Add Issue';
+      caseLinkInput.value = issue ? issue.caseLink || '' : '';
+      quoteLinkInput.value = issue ? issue.quoteLink || '' : '';
+      workorderLinkInput.value = issue ? issue.workorderLink || '' : '';
       completeBtn.style.display = issue ? 'block' : 'none';
+
+      // Update link icon states
+      const updateLinkIcon = (input, icon) => {
+        if (isValidUrl(input.value)) {
+          icon.classList.remove('disabled');
+          icon.onclick = () => window.open(input.value, '_blank', 'noopener');
+        } else {
+          icon.classList.add('disabled');
+          icon.onclick = null;
+        }
+      };
+
+      updateLinkIcon(caseLinkInput, caseLinkIcon);
+      updateLinkIcon(quoteLinkInput, quoteLinkIcon);
+      updateLinkIcon(workorderLinkInput, workorderLinkIcon);
+
+      // Update link icons on input change
+      caseLinkInput.addEventListener('input', () => updateLinkIcon(caseLinkInput, caseLinkIcon));
+      quoteLinkInput.addEventListener('input', () => updateLinkIcon(quoteLinkInput, quoteLinkIcon));
+      workorderLinkInput.addEventListener('input', () => updateLinkIcon(workorderLinkInput, workorderLinkIcon));
+
+      // Populate notes
+      notesList.innerHTML = '';
+      if (issue && issue.notes && issue.notes.length > 0) {
+        issue.notes.forEach(note => {
+          const noteElement = document.createElement('div');
+          noteElement.classList.add('note');
+          noteElement.innerHTML = `
+            <div>${linkifyText(note.text)}</div>
+            <div class="note-timestamp">${new Date(note.timestamp).toLocaleString()}</div>
+          `;
+          notesList.appendChild(noteElement);
+        });
+      } else {
+        notesList.innerHTML = '<div>No notes yet.</div>';
+      }
+
+      // Populate AI chat
+      aiChatList.innerHTML = '';
+      if (issue && issue.aiChat && issue.aiChat.length > 0) {
+        issue.aiChat.forEach(msg => {
+          const msgElement = document.createElement('div');
+          msgElement.classList.add('ai-message');
+          msgElement.innerHTML = `
+            <div>${linkifyText(msg.text)}</div>
+            <div class="ai-message-timestamp">${new Date(msg.timestamp).toLocaleString()}</div>
+          `;
+          aiChatList.appendChild(msgElement);
+        });
+      } else {
+        aiChatList.innerHTML = '<div>No AI chat messages yet.</div>';
+      }
+
+      noteInput.value = '';
+      aiChatInput.value = '';
 
       updateColorIndicators(
         issue ? issue.dueDate : document.getElementById('dueDate').value,
@@ -626,6 +842,7 @@
 
       modal.style.display = 'flex';
 
+      // Event listeners for date changes
       document.getElementById('dueDate').addEventListener('change', () => {
         updateColorIndicators(
           document.getElementById('dueDate').value,
@@ -638,6 +855,56 @@
           document.getElementById('actionDate').value
         );
       });
+
+      // Handle note addition
+      addNoteBtn.onclick = () => {
+        const noteText = noteInput.value.trim();
+        if (noteText) {
+          const timestamp = new Date().toISOString();
+          const noteElement = document.createElement('div');
+          noteElement.classList.add('note');
+          noteElement.innerHTML = `
+            <div>${linkifyText(noteText)}</div>
+            <div class="note-timestamp">${new Date(timestamp).toLocaleString()}</div>
+          `;
+          if (notesList.innerHTML === '<div>No notes yet.</div>') {
+            notesList.innerHTML = '';
+          }
+          notesList.appendChild(noteElement);
+          noteInput.value = '';
+          // Update issue notes
+          if (issue) {
+            issue.notes = issue.notes || [];
+            issue.notes.push({ text: noteText, timestamp });
+            saveIssues(issues);
+          }
+        }
+      };
+
+      // Handle AI chat message addition
+      addAIChatBtn.onclick = () => {
+        const chatText = aiChatInput.value.trim();
+        if (chatText) {
+          const timestamp = new Date().toISOString();
+          const msgElement = document.createElement('div');
+          msgElement.classList.add('ai-message');
+          msgElement.innerHTML = `
+            <div>${linkifyText(chatText)}</div>
+            <div class="ai-message-timestamp">${new Date(timestamp).toLocaleString()}</div>
+          `;
+          if (aiChatList.innerHTML === '<div>No AI chat messages yet.</div>') {
+            aiChatList.innerHTML = '';
+          }
+          aiChatList.appendChild(msgElement);
+          aiChatInput.value = '';
+          // Update issue AI chat
+          if (issue) {
+            issue.aiChat = issue.aiChat || [];
+            issue.aiChat.push({ text: chatText, timestamp });
+            saveIssues(issues);
+          }
+        }
+      };
 
       form.onsubmit = (e) => {
         e.preventDefault();
@@ -656,11 +923,8 @@
       const caseLink = document.getElementById('caseLink').value;
       const quoteLink = document.getElementById('quoteLink').value;
       const workorderLink = document.getElementById('workorderLink').value;
-      const additionalLink1 = document.getElementById('additionalLink1').value;
-      const additionalLink2 = document.getElementById('additionalLink2').value;
-      const additionalLink3 = document.getElementById('additionalLink3').value;
 
-      const links = [caseLink, quoteLink, workorderLink, additionalLink1, additionalLink2, additionalLink3];
+      const links = [caseLink, quoteLink, workorderLink];
       for (const link of links) {
         if (!isValidUrl(link)) {
           alert('Please enter valid URLs starting with http:// or https://, or leave fields empty.');
@@ -680,9 +944,7 @@
         existingIssue.caseLink = caseLink || null;
         existingIssue.quoteLink = quoteLink || null;
         existingIssue.workorderLink = workorderLink || null;
-        existingIssue.additionalLink1 = additionalLink1 || null;
-        existingIssue.additionalLink2 = additionalLink2 || null;
-        existingIssue.additionalLink3 = additionalLink3 || null;
+        // Preserve existing notes and AI chat
       } else {
         issues.push({
           id: Date.now(),
@@ -696,9 +958,8 @@
           caseLink: caseLink || null,
           quoteLink: quoteLink || null,
           workorderLink: workorderLink || null,
-          additionalLink1: additionalLink1 || null,
-          additionalLink2: additionalLink2 || null,
-          additionalLink3: additionalLink3 || null
+          notes: [],
+          aiChat: []
         });
       }
 
@@ -854,9 +1115,8 @@
               caseLink: issue.caseLink || null,
               quoteLink: issue.quoteLink || null,
               workorderLink: issue.workorderLink || null,
-              additionalLink1: issue.additionalLink1 || null,
-              additionalLink2: issue.additionalLink2 || null,
-              additionalLink3: issue.additionalLink3 || null
+              notes: Array.isArray(issue.notes) ? issue.notes : [],
+              aiChat: Array.isArray(issue.aiChat) ? issue.aiChat : []
             }));
             const validTabs = data.tabs.map(tab => ({
               ...tab,
@@ -899,7 +1159,6 @@
     document.getElementById('importJsonBtn').addEventListener('click', () => document.getElementById('importJson').click());
     document.getElementById('importJson').addEventListener('change', importJson);
     document.getElementById('exportJsonBtn').addEventListener('click', exportJson);
-    document.getElementById('aiChatBtn').addEventListener('click', openAIChatModal);
     document.getElementById('closeAIChatModal').addEventListener('click', closeAIChatModal);
 
     // Initialize
